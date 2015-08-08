@@ -7,41 +7,36 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 public class Myparser {
-	private  static final long INVALID = Long.MIN_VALUE;
-	private  static final int EOF = -1;
-	private  static final String BIND = "bind";
-	private  static final String MULTIPLY = "*";
-	private  static final String ADD = "+";
-	private  static final String MINUS = "-";
-	private  static final String DEVIDE = "/";
-	private  static final String BRAKET_OPEN = "(";
-	private  static final char BRAKET_OPEN_CHAR = BRAKET_OPEN.charAt(0);
-	private  static final String BRAKET_CLOSE = ")";
-	private  static final char BRAKET_CLOSE_CHAR = BRAKET_CLOSE.charAt(0);
-	private  static final String SPACE = " ";
-	private  static final char SPACE_ = ' ';
-	private  static final char CR = '\r'; // CR (Carriage Return)
-	private  static final char LF = '\n'; // LF (Line Feed)
-	
-	private  Reader reader;
-	//Map stores the all the binds of variables to the values.
-	private  HashMap<String,Double> map;
-	
-	public static void main(String... args){
-		String  input = "D:\\test.txt";
-		System.out.println(new Myparser().parseFile(input));
-	}
+	private static final long INVALID = Long.MIN_VALUE;
+	private static final int EOF = -1;
+	private static final String BIND = "bind";
+	private static final String MULTIPLY = "*";
+	private static final String ADD = "+";
+	private static final String MINUS = "-";
+	private static final String DEVIDE = "/";
+	private static final String BRAKET_OPEN = "(";
+	private static final char BRAKET_OPEN_CHAR = BRAKET_OPEN.charAt(0);
+	private static final String BRAKET_CLOSE = ")";
+	private static final char BRAKET_CLOSE_CHAR = BRAKET_CLOSE.charAt(0);
+	private static final String SPACE = " ";
+	private static final char SPACE_ = ' ';
+	private static final char CR = '\r'; // CR (Carriage Return)
+	private static final char LF = '\n'; // LF (Line Feed)
+
+	private Reader reader;
+	// Map stores the all the binds of variables to the values.
+	private HashMap<String, Double> map;
 
 	public Myparser() {
 		map = new HashMap<String, Double>();
 	}
-	private  String parseFile(String input) {
-		double ans =0;
+
+	public  String parseFile(String input) {
+		double ans = 0;
 		try {
 			reader = initReader(input);
-			//loop though every expressions and print last evaluated answer.
+			// loop though every expressions and print last evaluated answer.
 			while (true) {
 				String nextexpression = getNextExpression();
 				if (nextexpression.isEmpty()
@@ -49,15 +44,15 @@ public class Myparser {
 					break;
 			}
 			closeReader(reader);
-			return (ans == INVALID) ? ("Invalid Expression") : (ans+"");
-			
+			return (ans == INVALID) ? ("Invalid Expression") : (ans + "");
+
 		} catch (FileNotFoundException e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			return "File not Found";
 		} catch (IOException e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			System.out.println("Reader could not be closed...");
-			return ""+ans;
+			return "" + ans;
 		}
 	}
 
@@ -68,21 +63,22 @@ public class Myparser {
 	}
 
 	private static void closeReader(Reader reader) throws IOException {
-		if (reader != null) reader.close();
+		if (reader != null)
+			reader.close();
 	}
 
-	private  String getNextExpression() {
-		// gets next Expression  from the open file reader.
+	private String getNextExpression() {
+		// gets next Expression from the open file reader.
 		if (reader == null)
 			return "";
-		
+
 		char ch;
 		StringBuilder result = new StringBuilder();
 		try {
 			ch = (char) reader.read();
 
 			if (ch != (char) (EOF)) { // check for EOF
-				while ((ch == SPACE_ || ch == LF || ch ==CR) && ch != EOF)
+				while ((ch == SPACE_ || ch == LF || ch == CR) && ch != EOF)
 					ch = (char) reader.read();
 
 				if (isdigit(ch)) { // first digit is char. then extract number
@@ -91,21 +87,23 @@ public class Myparser {
 						ch = (char) reader.read();
 					}
 				} else if (ch == BRAKET_OPEN_CHAR) {
-					// if it is expression then expression may be in multiple line.
-					
+					// if it is expression then expression may be in multiple
+					// line.
+
 					int openbraces = 1;
 					result.append(ch);
 					ch = (char) reader.read();
-					
-					while (ch != (char) EOF ) {
+
+					while (ch != (char) EOF) {
 						if (ch == BRAKET_OPEN_CHAR)
 							openbraces++;
 						else if (ch == BRAKET_CLOSE_CHAR)
 							openbraces--;
 						if (ch == LF || ch == CR)
-							ch = SPACE_;  // replace  \n  and \r with space.
+							ch = SPACE_; // replace \n and \r with space.
 						result.append(ch);
-						if(openbraces<=0)break;
+						if (openbraces <= 0)
+							break;
 						ch = (char) reader.read();
 					}
 				}
@@ -115,100 +113,55 @@ public class Myparser {
 			e.printStackTrace();
 			return "";
 		}
-
 	}
 
 	private double evaluateinput(String nextLine) {
 		if (nextLine.isEmpty())
 			return INVALID;
-
 		nextLine = makeEvaluable(nextLine);
-
-		/*if (isdigit(nextLine.charAt(0))) // expression is number evaluate directly
-			return evaluate(nextLine);
-
-		String[] sexexpressions = getsexpressions(nextLine);
-
-		double ans = INVALID;
-		if (sexexpressions == null)
-			return ans;
-
-		for (String exp : sexexpressions) {
-			ans = evaluate(exp);
-			if (ans == INVALID)
-				return INVALID;
-		}*/
 		return evaluate(nextLine);
 	}
 
-	private static  String makeEvaluable(String nextLine) {
+	private static String makeEvaluable(String nextLine) {
 		nextLine = nextLine.replace(BRAKET_OPEN, BRAKET_OPEN + SPACE_);
 		nextLine = nextLine.replace(BRAKET_CLOSE, SPACE_ + BRAKET_CLOSE);
 		nextLine = trimExtraSpace(nextLine);
 		return nextLine;
 	}
 
-	private static  String trimExtraSpace(String line) {
+	private static String trimExtraSpace(String line) {
 		StringBuilder s = new StringBuilder();
 		boolean ignore = true;
-		for(char ss:line.toCharArray()){
-			if(ss!=SPACE_){ignore = false; s.append(ss); }
-			else if(ss==SPACE_ && !ignore){s.append(SPACE_); ignore = true;}
+		for (char ss : line.toCharArray()) {
+			if (ss != SPACE_) {
+				ignore = false;
+				s.append(ss);
+			} else if (ss == SPACE_ && !ignore) {
+				s.append(SPACE_);
+				ignore = true;
+			}
 		}
-			
+
 		return s.toString();
 	}
 
-	private static  boolean isdigit(char charAt) {
-		return ((int)charAt <= (int)'9') && ((int)charAt >= (int)'0')||charAt=='-' ||charAt == '.';
+	private static boolean isdigit(char charAt) {
+		return ((int) charAt <= (int) '9') && ((int) charAt >= (int) '0')
+				|| charAt == '-' || charAt == '.';
 	}
 
-	/*private static  String[] getsexpressions(String nextLine) {
-		int start = 0;
-		ArrayList<String> anslist = new ArrayList<String>();
-		while(true){
-		int LastIndexOfExpression = start+1;
-		int openBraces =1;
-		while (LastIndexOfExpression < nextLine.length()) {// removed -i 
-			if (nextLine.substring(LastIndexOfExpression,LastIndexOfExpression+1).equals(BRAKET_OPEN))
-				{openBraces++;
-			LastIndexOfExpression++;}
-			else if (nextLine.substring(LastIndexOfExpression,LastIndexOfExpression+1).equals(BRAKET_CLOSE)) {
-				openBraces--;
-				
-				if (openBraces == 0) {
-					break;
-				}
-				LastIndexOfExpression++;
-			}else{
-				LastIndexOfExpression++;
-			}
-		}
-		if(LastIndexOfExpression>start+1 && LastIndexOfExpression<nextLine.length()){
-			anslist.add(nextLine.substring(start, LastIndexOfExpression+1));
-			start = LastIndexOfExpression+2;
-		}else return makeArray(anslist);
-		}
-	}
-*/
-	/*private static  String[] makeArray(ArrayList<String> anslist) {
-		if(anslist==null)return null;
-		String[] result = new String[anslist.size()];
-		int i = 0; for(String s:anslist)result[i++]=s;
-		return result;
-	}*/
-
-	private  double evaluate(String line) {
+	private double evaluate(String line) {
 		ArrayList<String> tokens = new ArrayList<String>();
-		
+
 		String[] temp = line.split(SPACE);
-		for(String s :temp)
+		for (String s : temp)
 			tokens.add(s);
-		
-		if(!resolveBind(tokens)) return INVALID; // if expression has bind resolve it.
-		
-		
-		// CASE: a number or variable enclosed in brackets E.g (1234) or (variable).  
+
+		if (!resolveBind(tokens))
+			return INVALID; // if expression has bind resolve it.
+
+		// CASE: a number or variable enclosed in brackets E.g (1234) or
+		// (variable).
 		if (tokens.size() == 3) {
 			if ((tokens.get(0).equals(BRAKET_OPEN) && tokens.get(2).equals(
 					BRAKET_CLOSE))) { // remove braces
@@ -218,7 +171,7 @@ public class Myparser {
 				return INVALID;
 			}
 		}
-		// CASE: a number or variable  eg 1234 or variable 
+		// CASE: a number or variable eg 1234 or variable
 		if (tokens.size() == 1) {
 			final String token = tokens.get(0);
 			if (token.isEmpty()) {
@@ -230,55 +183,46 @@ public class Myparser {
 			} else
 				return INVALID;
 		}
-		/*else if (tokens.size()==3){
-			if(tokens.get(0).equals(BRAKET_OPEN) && tokens.get(2).equals(BRAKET_CLOSE)){
-				final String token = tokens.get(1);
-				if(token.isEmpty()) return INVALID;
-				else if (isdigit(token.charAt(0))){
-					return parseDouble(tokens.get(1));
-				}else if(map.get(token)!=null){
-					 return map.get(token);
-				}else return INVALID;
-			}else return INVALID;
-		}*/
-		//CASE 3 : nested expression.
-		else if(tokens.get(0).equals(BRAKET_OPEN)) {
-			String operation = tokens.get(1);
-			if(!isValidOperation(operation)) return INVALID;
-			//(  ()()() )
+		// CASE 3 : nested expression.
+		else if (tokens.get(0).equals(BRAKET_OPEN)) {
+			String symbol = tokens.get(1);
+			if (!validateSymbol(symbol))
+				return INVALID;
 			ArrayList<Double> oprands = new ArrayList<Double>();
-			while(tokens.size()>2 && !tokens.get(2).equals(BRAKET_CLOSE)){
-				String expression = extractExpression(tokens,2);
+			while (tokens.size() > 2 && !tokens.get(2).equals(BRAKET_CLOSE)) {
+				String expression = extractExpression(tokens, 2);
 				double value = evaluate(expression);
-				if(value==INVALID) return INVALID;
+				if (value == INVALID)
+					return INVALID;
 				oprands.add(value);
 			}
-			return calculate(operation, oprands);
-			
-		}else{
+			return calculate(symbol, oprands);
+
+		} else {
 			return INVALID;
 		}
 	}
 
-	private static  double parseDouble(String number) {
-		try{
+	private static double parseDouble(String number) {
+		// try to parse string in double if can not return invalid number.
+		try {
 			return Double.parseDouble(number);
-		}catch(NumberFormatException e){
+		} catch (NumberFormatException e) {
 			return INVALID;
 		}
 	}
 
-	private static  double calculate(String operation, ArrayList<Double> oprands) {
+	private static double calculate(String operation, ArrayList<Double> oprands) {
 		if (oprands.size() == 0)
 			return INVALID;
 		if (operation.equals(ADD)) {
-			double ans = 0;
+			double ans = 0; // Identity in addition .
 			for (double a : oprands)
 				ans += a;
 			return ans;
 
 		} else if (operation.equals(MULTIPLY)) {
-			double ans = 1;
+			double ans = 1; // multiplicative identity
 			for (double a : oprands)
 				ans *= a;
 			return ans;
@@ -287,36 +231,35 @@ public class Myparser {
 												// invalid expression.
 			if (oprands.size() > 2)
 				return INVALID;
-
-			double ans = oprands.get(0) / oprands.get(1);
-			// for(Long a:oprands)ans*=a;
-			return ans;
+			return oprands.get(0) / oprands.get(1);
 		} else if (operation.equals(MINUS)) {
 			if (oprands.size() > 2)
 				return INVALID;
-			double ans = oprands.get(0) - oprands.get(1);
-			return ans;
+			return oprands.get(0) - oprands.get(1);
 		} else
 			return INVALID;
 	}
 
-	private static  boolean isValidOperation(String operation) {
-		if(operation.equals(ADD) ||operation.equals(MULTIPLY) || operation.equals(MINUS)||operation.equals(DEVIDE)) return true;
+	private static boolean validateSymbol(String operation) {
+		if (operation.equals(ADD) || operation.equals(MULTIPLY)
+				|| operation.equals(MINUS) || operation.equals(DEVIDE))
+			return true;
 		return false;
 	}
 
-	private  boolean resolveBind(ArrayList<String> tokens) {
+	private boolean resolveBind(ArrayList<String> tokens) {
 		if (contains(tokens, BIND)) {
 			int bindIndex = indexOf(tokens, BIND);
 			if (bindIndex == -1)
 				return true;
-			if (bindIndex==0 || bindIndex+2>tokens.size()|| !tokens.get(bindIndex - 1).equals(BRAKET_OPEN))
+			if (bindIndex == 0 || bindIndex + 2 > tokens.size()
+					|| !tokens.get(bindIndex - 1).equals(BRAKET_OPEN))
 				return false;
 
 			String variable = tokens.get(bindIndex + 1);
 			if (!validate(variable))
 				return false;
-			
+
 			String expression = extractExpression(tokens, bindIndex + 2);
 			double value = evaluate(expression);
 			if (value == INVALID)
@@ -332,12 +275,12 @@ public class Myparser {
 	private static int indexOf(ArrayList<String> list, String key) {
 		if (list == null || key == null || key.isEmpty())
 			return -1;
-		
+
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i).equals(key))
 				return i;
 		}
-		
+
 		return -1;
 	}
 
@@ -351,23 +294,25 @@ public class Myparser {
 		return false;
 	}
 
-	private static  boolean validate(String variable) {
-		if(variable==null || variable.isEmpty()) return false;
-		for(char c:variable.toCharArray()){
-			if((int)c > (int)'z' ||(int)c <(int)'a') return false;
+	private static boolean validate(String variable) {
+		if (variable == null || variable.isEmpty())
+			return false;
+		for (char c : variable.toCharArray()) {
+			if ((int) c > (int) 'z' || (int) c < (int) 'a')
+				return false;
 		}
 		return true;
 	}
 
 	private static String extractExpression(ArrayList<String> tokens,
 			int beginIndex) {
-		//CASE 1 : is a number.
+		// CASE 1 : is a number.
 		if (!tokens.get(beginIndex).equals(BRAKET_OPEN)) {
 			String result = tokens.get(beginIndex);
 			tokens.remove(beginIndex);
 			return result;
-		} 
-		//CASE 2 : is an expression.
+		}
+		// CASE 2 : is an expression.
 		else {
 			int openBraces = 1;
 			int endIndexOfExpression = beginIndex + 1;
@@ -381,20 +326,21 @@ public class Myparser {
 					}
 				}
 			}
-			String result = makestring(tokens, beginIndex, endIndexOfExpression);
-			// remove the extracted expression from tokens since it will be replaced by variable
+			String result = makeString(tokens, beginIndex, endIndexOfExpression);
+			// remove the extracted expression from tokens since it will be
+			// replaced by variable
 			for (int a = beginIndex; a <= endIndexOfExpression; a++)
 				tokens.remove(beginIndex);
-			
+
 			return result;
 		}
 	}
 
-	private static  String makestring(ArrayList<String> tokens, int i,
-			int lastIndexOfExpression) {
-		StringBuilder s = new StringBuilder(tokens.get(i++));
-		while(i<lastIndexOfExpression+1){
-			s.append(" "+tokens.get(i++));
+	private static String makeString(ArrayList<String> tokens, int beginIndex,
+			int endIndex) {
+		StringBuilder s = new StringBuilder(tokens.get(beginIndex++));
+		while (beginIndex < endIndex + 1) {
+			s.append(" " + tokens.get(beginIndex++));
 		}
 		return s.toString();
 	}
