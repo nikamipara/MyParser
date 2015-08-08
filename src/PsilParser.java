@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class PsilParser {
 	private static final long INVALID = Long.MIN_VALUE;
-	private static final int EOF = -1;
+	private static final char EOF = (char)-1;
 	private static final String BIND = "bind";
 	private static final String MULTIPLY = "*";
 	private static final String ADD = "+";
@@ -44,7 +44,7 @@ public class PsilParser {
 					break;
 			}
 			closeReader(reader);
-			return (ans == INVALID) ? ("Invalid Expression") : (ans + "");
+			return (ans == INVALID) ? ("Invalid program") : (ans + "");
 
 		} catch (FileNotFoundException e) {
 			// e.printStackTrace();
@@ -77,7 +77,7 @@ public class PsilParser {
 		try {
 			ch = (char) reader.read();
 
-			if (ch != (char) (EOF)) { // check for EOF
+			if (ch != EOF) { // check for EOF
 				while ((ch == SPACE_ || ch == LF || ch == CR) && ch != EOF)
 					ch = (char) reader.read();
 
@@ -94,7 +94,7 @@ public class PsilParser {
 					result.append(ch);
 					ch = (char) reader.read();
 
-					while (ch != (char) EOF) {
+					while (ch != EOF) {
 						if (ch == BRAKET_OPEN_CHAR)
 							openbraces++;
 						else if (ch == BRAKET_CLOSE_CHAR)
@@ -108,7 +108,8 @@ public class PsilParser {
 					}
 				}
 			}
-			return result.toString(); // return the extracted expression.
+			if((ch!= EOF && ch!=SPACE_ && ch!=CR && ch!=LF )&& result.length()==0) return "()";
+			else return result.toString(); // return the extracted expression.
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "";
