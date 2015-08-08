@@ -1,42 +1,107 @@
-import java.io.File;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 
 
 public class Myparser {
+	private static final long INVALID = Long.MIN_VALUE;
+	private static final int EOF = -1;
 	private static final String BIND = "bind";
 	private static final String MULTIPLY = "*";
 	private static final String ADD = "+";
+	private static final String MINUS = "-";
+	private static final String DEVIDE = "/";
 	private static final String START = "(";
 	private static final String END = ")";
+	private static Reader reader;
 	
-	private static HashMap<String,Long> map = new HashMap<String,Long>();
+	private static HashMap<String,Double> map = new HashMap<String,Double>();
 	public static void main(String... args){
-		File input = new File("D:\\test.txt");
+		String  input = "D:\\test.txt";
 		System.out.println(parse(input));
+		if(reader!=null)
+			try {
+				reader.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	}
 
-	private static String parse(File input) {
+	private static String parse(String input) {
 		try {
-			Scanner sc = new Scanner(input);
-			long ans =0;
-			while(sc.hasNextLine()){
-				if((ans = evaluateinput(sc.nextLine()))==-1) break;
+			FileInputStream fstream = new FileInputStream(input);
+			DataInputStream in = new DataInputStream(fstream);
+			reader = new InputStreamReader(in);
+			double ans =0;
+			while(true){
+				String nextexpression = getNextExpression(); 
+				if(nextexpression.isEmpty())break;
+				else if((ans = evaluateinput(nextexpression))==INVALID) break;
 			}
-			if(ans ==-1) return "Invalid Expression";
+			if(ans ==INVALID) return "Invalid Expression";
 			else return ""+ans;
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 			return "file not found";
 		}
 	}
 
-	private static long evaluateinput(String nextLine) {
+	private static String getNextExpression() {
+		//Reader reader = new InputStreamReader(System.in);
+		char ch;
+		StringBuilder result = new StringBuilder();
+		try {
+			ch = (char) reader.read();
+			
+			if (ch != (char)(EOF)) {  // check for EOF
+			    // we have a character ...
+				while((ch== ' ' ||ch=='\n') && ch!=EOF)ch = (char)reader.read();
+				if(isdigit(ch)){ // first digit is char.
+					while(ch!=EOF && isdigit(ch)){
+						result.append(ch);
+						ch = (char)reader.read();
+					}
+					if(ch!=EOF)reader.read();
+					return result.toString();
+				}else if(ch=='('){
+					int openbraces =1;
+					result.append(ch);
+					ch = (char)reader.read();
+					while(ch!=(char)EOF && openbraces>0){
+						if(ch =='(') openbraces++;
+						else if (ch ==')') openbraces--;
+						if(ch =='\n'||ch=='\r')ch= ' ';
+						result.append(ch);
+						ch = (char)reader.read();
+					}
+					return result.toString();
+				}else return result.toString();
+				
+			}else{
+				return result.toString();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "";
+		}
+		
+	}
+
+	private static double evaluateinput(String nextLine) {
+		if(nextLine.isEmpty()) return INVALID;
+		nextLine = nextLine.replace("(", "( ");
+		nextLine = nextLine.replace(")", " )");
+		nextLine =trimspace(nextLine);
 		int i=0;
-		if(nextLine.charAt(0) < (int)'a') return evaluate(nextLine);
+		if(isdigit(nextLine.charAt(0))) return evaluate(nextLine);
 		/*while(i<nextLine.length()){
 			if(nextLine.substring(i, i+1).equals(START)){
 				int start = i;
@@ -45,14 +110,29 @@ public class Myparser {
 		}*/
 		String[] sexexpressions  = getsexpressions(nextLine);
 		
-		long ans = -1;
+		double ans = INVALID;
 		if(sexexpressions==null) return ans;
 		
 		for(String exp:sexexpressions){
 			ans = evaluate(exp);
-			if(ans==-1)return -1;
+			if(ans==INVALID)return INVALID;
 		}
-		return -1;
+		return ans;
+	}
+
+	private static String trimspace(String nextLine) {
+		StringBuilder s = new StringBuilder();
+		boolean ignore = true;
+		for(char ss:nextLine.toCharArray()){
+			if(ss!=' '){ignore = false; s.append(ss); }
+			else if(ss==' ' && !ignore){s.append(' '); ignore = true;}
+		}
+			
+		return s.toString();
+	}
+
+	private static boolean isdigit(char charAt) {
+		return ((int)charAt <= (int)'9') && ((int)charAt >= (int)'0')||charAt=='-';
 	}
 
 	private static String[] getsexpressions(String nextLine) {
@@ -63,24 +143,34 @@ public class Myparser {
 		int openBraces =1;
 		while (LastIndexOfExpression < nextLine.length()) {// removed -i 
 			if (nextLine.substring(LastIndexOfExpression,LastIndexOfExpression+1).equals(START))
-				openBraces++;
+				{openBraces++;
+			LastIndexOfExpression++;}
 			else if (nextLine.substring(LastIndexOfExpression,LastIndexOfExpression+1).equals(END)) {
 				openBraces--;
+				
 				if (openBraces == 0) {
 					break;
-				} else {
-					LastIndexOfExpression++;
 				}
+				LastIndexOfExpression++;
+			}else{
+				LastIndexOfExpression++;
 			}
 		}
-		if(LastIndexOfExpression>start+1){
-			anslist.add(nextLine.substring(start, LastIndexOfExpression));
-			start = LastIndexOfExpression+1;
-		}else return (String[])anslist.toArray();
+		if(LastIndexOfExpression>start+1 && LastIndexOfExpression<nextLine.length()){
+			anslist.add(nextLine.substring(start, LastIndexOfExpression+1));
+			start = LastIndexOfExpression+2;
+		}else return makeArray(anslist);
 		}
 	}
 
-	private static long evaluate(String nextLine) {
+	private static String[] makeArray(ArrayList<String> anslist) {
+		if(anslist==null)return null;
+		String[] result = new String[anslist.size()];
+		int i = 0; for(String s:anslist)result[i++]=s;
+		return result;
+	}
+
+	private static double evaluate(String nextLine) {
 		// returns -1 if invalid expression otherwise the ans;
 		//(bind length 10) (+ 1 2 3 4) (bind breadth 10) (* length breadth)
 
@@ -88,73 +178,99 @@ public class Myparser {
 		String[] temp = nextLine.split(" ");
 		for(String s :temp)
 			tokens.add(s);
-		if(!resolvebinds(tokens)) return -1; // all the variables binds have been resolved.
+		if(!resolvebinds(tokens)) return INVALID; // all the variables binds have been resolved.
 		
 		// simple 1234 or name of variable  like things...  
 		if(tokens.size()==1){
-			if ((int)tokens.get(0).charAt(0) < (int)'a'){
-				return Long.parseLong(tokens.get(0));
-			}else {
+			if (isdigit(tokens.get(0).charAt(0))){
+				return parseDouble(tokens.get(0));
+			}else if(map.get(tokens.get(0))!=null){
 				 return map.get(tokens.get(0));
-			}
+			}else return INVALID;
 		}else if (tokens.size()==3){
 			if(tokens.get(0).equals(START) && tokens.get(2).equals(END)){
-				if ((int)tokens.get(1).charAt(0) < (int)'a'){
-					return Long.parseLong(tokens.get(1));
-				}else {
-					 return map.get(tokens.get(1));
-				}
-			}
+				String token = tokens.get(1);
+				if(token.isEmpty()) return INVALID;
+				else if (isdigit(token.charAt(0))){
+					return parseDouble(tokens.get(1));
+				}else if(map.get(token)!=null){
+					 return map.get(token);
+				}else return INVALID;
+			}else return INVALID;
 		}else if(tokens.get(0).equals(START)) {
 			String operation = tokens.get(1);
-			if(!isValidOperation(operation)) return -1;
+			if(!isValidOperation(operation)) return INVALID;
 			//(  ()()() )
-			ArrayList<Long> oprands = new ArrayList<Long>();
-			while(!tokens.get(2).equals(END)){
+			ArrayList<Double> oprands = new ArrayList<Double>();
+			while(tokens.size()>2 && !tokens.get(2).equals(END)){
 				String expression = getExpression(tokens,2);
-				long value = evaluate(expression);
-				if(value==-1) return -1;
+				double value = evaluate(expression);
+				if(value==INVALID) return INVALID;
 				oprands.add(value);
 			}
 			return calculate(operation, oprands);
 			
 		}else{
-			return -1;
+			return INVALID;
 		}
-		return -1;
-		
 	}
 
-	private static long calculate(String operation, ArrayList<Long> oprands) {
-		if(oprands.size()==0) return -1;
-		if(operation.equals(ADD)){
-			long ans =0;
-			for(Long a:oprands)ans+=a;
-			return ans;
-			
-		}else if(operation.equals(MULTIPLY)){
-			long ans =1;
-			for(Long a:oprands)ans*=a;
-			return ans;
+	private static double parseDouble(String number) {
+		try{
+			return Double.parseDouble(number);
+		}catch(NumberFormatException e){
+			return INVALID;
 		}
-		else return -1;
+	}
+
+	private static double calculate(String operation, ArrayList<Double> oprands) {
+		if (oprands.size() == 0)
+			return INVALID;
+		if (operation.equals(ADD)) {
+			double ans = 0;
+			for (double a : oprands)
+				ans += a;
+			return ans;
+
+		} else if (operation.equals(MULTIPLY)) {
+			double ans = 1;
+			for (double a : oprands)
+				ans *= a;
+			return ans;
+		} else if (operation.equals(DEVIDE)) { // only 2 operands are
+												// supported...... other wise
+												// invalid expression.
+			if (oprands.size() > 2)
+				return INVALID;
+
+			double ans = oprands.get(0) / oprands.get(1);
+			// for(Long a:oprands)ans*=a;
+			return ans;
+		} else if (operation.equals(MINUS)) {
+			if (oprands.size() > 2)
+				return INVALID;
+			double ans = oprands.get(0) - oprands.get(1);
+			return ans;
+		} else
+			return INVALID;
 	}
 
 	private static boolean isValidOperation(String operation) {
-		return true;
+		if(operation.equals(ADD) ||operation.equals(MULTIPLY) || operation.equals(MINUS)||operation.equals(DEVIDE)) return true;
+		return false;
 	}
 
 	private static boolean resolvebinds(ArrayList<String> tokens) {
-		while(contains(tokens,BIND)){
-			int i = indexof(tokens,BIND);
+		if (contains(tokens,BIND)){
+			int i = indexOf(tokens ,BIND);
 			if(i==-1 ) return true;
 			if(!tokens.get(i-1).equals(START)) return false;
 			
 			String variable  = tokens.get(i+1);
 			if(!validae(variable)) return false;
 			String expression = getExpression(tokens,i+2);
-			long value = evaluate(expression);
-			if(value==-1) return false;
+			double value = evaluate(expression);
+			if(value==INVALID) return false;
 			else {
 				map.put(variable, value);
 			}
@@ -163,8 +279,24 @@ public class Myparser {
 		return true;
 	}
 
+	private static int indexOf(ArrayList<String> tokens, String key) {
+		for(int i =0;i<tokens.size();i++){
+			if(tokens.get(i).equals(key)) return i;
+		}
+		return -1;
+	}
+
+	private static boolean contains(ArrayList<String> tokens, String key) {
+		for(int i =0;i<tokens.size();i++){
+			if(tokens.get(i).equals(key)) return true;
+		}
+		return false;
+	}
+
 	private static boolean validae(String variable) {
-		// validity of a variable.
+		for(char c:variable.toCharArray()){
+			if((int)c > (int)'z' ||(int)c <(int)'a') return false;
+		}
 		return true;
 	}
 
@@ -185,13 +317,14 @@ public class Myparser {
 					if (openBraces == 0) {
 						break;
 					} else {
-						LastIndexOfExpression++;
+						//LastIndexOfExpression++;
 					}
 				}
+				LastIndexOfExpression++;
 			}
 			String result = makestring(tokens, i, LastIndexOfExpression);
 			for (int a = i; a <= LastIndexOfExpression; a++)
-				tokens.remove(a);
+				tokens.remove(i);
 			return result;
 		}
 	}
@@ -203,17 +336,5 @@ public class Myparser {
 			s.append(" "+tokens.get(i++));
 		}
 		return s.toString();
-	}
-	private static boolean contains(ArrayList<String> tokens,String key){
-		for(String k:tokens){
-			if(k.equals(key))return true;
-		}
-		return false;
-	}
-	private static int indexof(ArrayList<String> tokens,String key){
-		for(int k=0;k<tokens.size();k++){
-			if(tokens.get(k).equals(key))return k;
-		}
-		return -1;
 	}
 }
