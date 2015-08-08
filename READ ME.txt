@@ -1,0 +1,23 @@
+By Nikunj Amipara 
+Email :Curious.nikunj@gmail.com
+Mo: +7838218150.
+
+ 
+............CLASS TEST..........................
+Test class: to check psill parser.
+contains only one method main.
+
+.............class PsillParser..................
+Only has one public method parseFile(). which takes absolute file path as input and returns the result.
+
+.........................Assumptions............
+1. all operands in expressions are separated by space.
+E.g (+ (+ 1 2) (3)) +> valid ,(+ (+ 1 2)(3)) +> invalid
+
+2.  "-a" this kind of assignment is invalid where a is variable.
+E.g (bind a 10)(bind b -a) => invalid.
+
+3. data type double is used for parsing hence values that exceeds maximum
+double value will generate an overflow and is not handled.
+
+4. zip file has eclipse project. hence can be imported in EclipseIDE.
