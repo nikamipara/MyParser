@@ -7,7 +7,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Myparser {
+public class PsilParser {
 	private static final long INVALID = Long.MIN_VALUE;
 	private static final int EOF = -1;
 	private static final String BIND = "bind";
