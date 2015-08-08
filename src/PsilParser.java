@@ -28,7 +28,7 @@ public class PsilParser {
 	// Map stores the all the binds of variables to the values.
 	private HashMap<String, Double> map;
 
-	public Myparser() {
+	public PsilParser() {
 		map = new HashMap<String, Double>();
 	}
 
@@ -178,8 +178,8 @@ public class PsilParser {
 				return INVALID;
 			} else if (isdigit(token.charAt(0))) {
 				return parseDouble(token);
-			} else if (map.get(token) != null) {
-				return map.get(token);
+			} else if (get(token) != null) { // variable
+				return get(token);
 			} else
 				return INVALID;
 		}
@@ -213,9 +213,9 @@ public class PsilParser {
 	}
 
 	private static double calculate(String operation, ArrayList<Double> oprands) {
-		if (oprands.size() == 0)
+		if (oprands.size() < 2)
 			return INVALID;
-		if (operation.equals(ADD)) {
+		else if (operation.equals(ADD)) {
 			double ans = 0; // Identity in addition .
 			for (double a : oprands)
 				ans += a;
@@ -226,16 +226,18 @@ public class PsilParser {
 			for (double a : oprands)
 				ans *= a;
 			return ans;
-		} else if (operation.equals(DEVIDE)) { // only 2 operands are
-												// supported...... other wise
-												// invalid expression.
-			if (oprands.size() > 2)
-				return INVALID;
-			return oprands.get(0) / oprands.get(1);
+		} else if (operation.equals(DEVIDE)) {
+			double ans = oprands.get(0);
+			oprands.remove(0);
+			for (double a : oprands)
+				ans /= a;
+			return ans;
 		} else if (operation.equals(MINUS)) {
-			if (oprands.size() > 2)
-				return INVALID;
-			return oprands.get(0) - oprands.get(1);
+			double ans = oprands.get(0);
+			oprands.remove(0);
+			for (double a : oprands)
+				ans -= a;
+			return ans;
 		} else
 			return INVALID;
 	}
@@ -265,7 +267,7 @@ public class PsilParser {
 			if (value == INVALID)
 				return false;
 			else {
-				map.put(variable, value); // store variable value in map.
+				put(variable, value); // store variable value in map.
 			}
 			tokens.remove(bindIndex); // remove bind keyword.
 		}
@@ -343,5 +345,17 @@ public class PsilParser {
 			s.append(" " + tokens.get(beginIndex++));
 		}
 		return s.toString();
+	}
+	private void put(final String variable, final Double value){
+		map.put(variable, value);
+	}
+	
+	private Double get(String variable) {
+		if (variable == null)
+			return null;
+		boolean isNegative = /*variable.charAt(0) == '-'*/ false;
+		Double value = isNegative ? map.get(variable.substring(1)) : map.get(variable);
+		if (value == null)return null;
+		return isNegative ? 0 - value : value;
 	}
 }
